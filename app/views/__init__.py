@@ -1,0 +1,5 @@
+from .ws import router as ws_router
+from fastapi import APIRouter
+
+main_router = APIRouter()
+main_router.include_router(ws_router)
