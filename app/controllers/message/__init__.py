@@ -1,10 +1,11 @@
-from app.controllers.chat.dto import ChatMessageDto
+from app.controllers.message.dto import ChatMessageDto
+from app.controllers.message.interfaces import IMessageController
 from .exceptions import NoSuchMessageException
 from app.models.chat import ChatMessageModel
 from datetime import datetime
 
 
-class MessageController:
+class MessageController(IMessageController):
     def __init__(self):
         pass
 
