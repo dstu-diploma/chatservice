@@ -39,5 +39,7 @@ async def websocket_endpoint(
     except HTTPException as e:
         await socket.close()
     except Exception as e:
+        pass
+    finally:
         if "user_id" in socket.scope:
             ws_controller.register_disconnect(socket.scope["user_id"])
