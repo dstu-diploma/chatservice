@@ -3,7 +3,7 @@ from app.controllers.message.interfaces import IMessageController
 from app.controllers.ws.handler.registry import REGISTERED_HANDLERS
 from app.controllers.ws.interfaces import IWebsocketController
 from pydantic import BaseModel, ValidationError
-from fastapi import Depends, WebSocket
+from fastapi import WebSocket
 from typing import Any
 
 from app.controllers.ws.exceptions import (
@@ -22,6 +22,7 @@ class WebsocketController(IWebsocketController):
 
     def register_connect(self, user_id: int, connection: WebSocket):
         self._connections[user_id] = connection
+        connection.scope["user_id"] = user_id
 
     def register_disconnect(self, user_id: int):
         del self._connections[user_id]
@@ -57,7 +58,9 @@ class WebsocketController(IWebsocketController):
             raise ActionValidationPayloadException()
 
 
-def get_websocket_controller(
-    message_controller: MessageController = Depends(),
-) -> WebsocketController:
-    return WebsocketController(message_controller)
+# свэг
+__controller = WebsocketController(MessageController())
+
+
+def get_websocket_controller() -> WebsocketController:
+    return __controller
