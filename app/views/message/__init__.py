@@ -2,11 +2,26 @@ from app.controllers.message import MessageController, get_message_controller
 from app.views.message.exceptions import NotYourMessageException
 from app.controllers.auth.dto import AccessJWTPayloadDto
 from app.controllers.message.dto import ChatMessageDto
+from app.views.message.dto import SendMessageDto
 from app.controllers.auth import get_user_dto
 from fastapi import APIRouter, Depends
 
 
 router = APIRouter(tags=["Сообщения"], prefix="/message")
+
+
+@router.post("/", response_model=ChatMessageDto, summary="Написать сообщение")
+async def write_message(
+    dto: SendMessageDto,
+    user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
+    controller: MessageController = Depends(get_message_controller),
+):
+    """
+    Отправляет пользователю сообщение. Если получатель онлайн, то ему по вебсокету придет соответствующее уведомление.
+    """
+    return await controller.create(
+        user_dto.user_id, dto.to_user_id, dto.contents
+    )
 
 
 @router.delete(

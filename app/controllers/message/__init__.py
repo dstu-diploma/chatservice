@@ -1,3 +1,4 @@
+from app.controllers.event_controller import Emitter, Events
 from app.controllers.message.dto import ChatMessageDto
 from app.controllers.message.interfaces import IMessageController
 from .exceptions import NoSuchMessageException
@@ -20,7 +21,10 @@ class MessageController(IMessageController):
             from_user_id=from_user_id, to_user_id=to_user_id, contents=contents
         )
 
-        return ChatMessageDto.from_tortoise(message)
+        dto = ChatMessageDto.from_tortoise(message)
+        Emitter.emit(Events.Message, dto)
+
+        return dto
 
     async def _get_by_id(self, message_id: int) -> ChatMessageModel:
         message = await ChatMessageModel.get_or_none(id=message_id)
