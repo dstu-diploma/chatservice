@@ -28,7 +28,7 @@ async def websocket_endpoint(
             header = get_message_header(message_data)
 
             if not ws_controller.is_connected(header.user_id):
-                ws_controller.register_connect(header.user_id, socket)
+                await ws_controller.register_connect(header.user_id, socket)
 
             await ws_controller.run_action(
                 header.user_id, header.action, message_data.get("data", {})
@@ -42,4 +42,4 @@ async def websocket_endpoint(
         pass
     finally:
         if "user_id" in socket.scope:
-            ws_controller.register_disconnect(socket.scope["user_id"])
+            await ws_controller.register_disconnect(socket.scope["user_id"])

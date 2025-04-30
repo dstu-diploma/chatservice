@@ -1,6 +1,7 @@
 from app.controllers.message import MessageController
 from app.controllers.message.interfaces import IMessageController
 from app.controllers.ws.handler.registry import REGISTERED_HANDLERS
+from app.controllers.ws.handler.status import generate_online_status
 from app.controllers.ws.interfaces import IWebsocketController
 from pydantic import BaseModel, ValidationError
 from fastapi import WebSocket
@@ -20,12 +21,18 @@ class WebsocketController(IWebsocketController):
         self._connections = {}
         self._message_controller = message_controller
 
-    def register_connect(self, user_id: int, connection: WebSocket):
+    async def register_connect(self, user_id: int, connection: WebSocket):
+        # отправляем уведомление до регистрации коннекта для того, чтобы только что законнекченому пользователю
+        # не пришло сообщение
+        await self.broadcast_payload(generate_online_status(user_id, True))
+
         self._connections[user_id] = connection
         connection.scope["user_id"] = user_id
 
-    def register_disconnect(self, user_id: int):
+    async def register_disconnect(self, user_id: int):
         del self._connections[user_id]
+
+        await self.broadcast_payload(generate_online_status(user_id, False))
 
     def is_connected(self, user_id: int):
         return user_id in self._connections
