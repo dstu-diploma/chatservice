@@ -1,7 +1,7 @@
+from app.controllers.message import MessageController, get_message_controller
 from app.views.message.exceptions import NotYourMessageException
 from app.controllers.auth.dto import AccessJWTPayloadDto
 from app.controllers.message.dto import ChatMessageDto
-from app.controllers.message import MessageController
 from app.controllers.auth import get_user_dto
 from fastapi import APIRouter, Depends
 
@@ -15,7 +15,7 @@ router = APIRouter(tags=["Сообщения"], prefix="/message")
 async def delete_message(
     id: int,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: MessageController = Depends(),
+    controller: MessageController = Depends(get_message_controller),
 ):
     """
     Удаляет сообщение у обоих пользователей (точнее, вообще из базы данных).
@@ -35,7 +35,7 @@ async def delete_message(
 async def read_message(
     id: int,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: MessageController = Depends(),
+    controller: MessageController = Depends(get_message_controller),
 ):
     """
     Помечает сообщение как прочитанное.

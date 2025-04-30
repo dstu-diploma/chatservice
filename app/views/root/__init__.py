@@ -1,9 +1,9 @@
+from app.controllers.message import MessageController, get_message_controller
+from app.controllers.auth.dto import AccessJWTPayloadDto
+from app.controllers.message.dto import ChatMessageDto
+from app.controllers.auth import get_user_dto
 from fastapi import APIRouter, Depends
 
-from app.controllers.auth import get_user_dto
-from app.controllers.auth.dto import AccessJWTPayloadDto
-from app.controllers.message import MessageController
-from app.controllers.message.dto import ChatMessageDto
 
 router = APIRouter(tags=["Основное"], prefix="")
 
@@ -11,7 +11,7 @@ router = APIRouter(tags=["Основное"], prefix="")
 @router.get("/", response_model=list[int], summary="Получение списка чатов")
 async def get_chats(
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: MessageController = Depends(),
+    controller: MessageController = Depends(get_message_controller),
 ):
     """
     Возвращает список ID пользователей, с которыми текущий залогиненный пользователь хотя бы раз общался.
@@ -28,7 +28,7 @@ async def get_chats(
 async def get_chat_history(
     id: int,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: MessageController = Depends(),
+    controller: MessageController = Depends(get_message_controller),
 ):
     """
     Возвращает историю общения с пользователем.
