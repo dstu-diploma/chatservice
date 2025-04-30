@@ -1,8 +1,11 @@
+import typing
 from app.controllers.message.dto import ChatMessageDto
 from app.controllers.message.interfaces import IMessageController
 from .exceptions import NoSuchMessageException
 from app.models.chat import ChatMessageModel
 from datetime import datetime
+from tortoise.expressions import Q, F
+from tortoise.functions import Max
 
 
 class MessageController(IMessageController):
@@ -25,6 +28,9 @@ class MessageController(IMessageController):
 
         return message
 
+    async def get_by_id(self, message_id: int) -> ChatMessageDto:
+        return ChatMessageDto.from_tortoise(await self._get_by_id(message_id))
+
     async def delete(self, message_id: int) -> None:
         message = await self._get_by_id(message_id)
         await message.delete()
@@ -36,6 +42,28 @@ class MessageController(IMessageController):
             from_user_id=from_user_id, to_user_id=to_user_id
         )
         return [ChatMessageDto.from_tortoise(message) for message in messages]
+
+    async def get_user_chats(self, user_id: int) -> list[int]:
+        # ниггер слаб в резолве типов
+        partner_times = typing.cast(
+            list[int],
+            await ChatMessageModel.filter(
+                Q(from_user_id=user_id) | Q(to_user_id=user_id)
+            )
+            .annotate(
+                partner_id=(
+                    F("to_user_id")
+                    if F("from_user_id") == user_id
+                    else F("from_user_id")
+                )
+            )
+            .group_by("partner_id")
+            .annotate(last_time=Max("send_time"))
+            .order_by("last_time")
+            .values_list("partner_id", flat=True),
+        )
+
+        return partner_times
 
     async def mark_readed(self, message_id: int) -> ChatMessageDto:
         message = await self._get_by_id(message_id)

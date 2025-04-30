@@ -1,6 +1,14 @@
 from fastapi import HTTPException
 
 
+class InvalidTokenException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail="Необходимо передать Bearer-токен в заголовок Authorization!",
+        )
+
+
 class TokenExpiredException(HTTPException):
     def __init__(self):
         super().__init__(status_code=403, detail="Истек срок действия токена!")
