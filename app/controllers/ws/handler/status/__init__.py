@@ -7,14 +7,12 @@ class OnlineStatusDto(BaseModel):
     online: bool
 
 
-class WsMessageHandlerOutDto(WsBaseHandlerOutDto):
+class WsStatusHandlerOutDto(WsBaseHandlerOutDto):
     action: str = "online"
     data: OnlineStatusDto
 
 
-def generate_online_status(
-    user_id: int, online: bool
-) -> WsMessageHandlerOutDto:
-    return WsMessageHandlerOutDto(
+def generate_online_status(user_id: int, online: bool) -> WsStatusHandlerOutDto:
+    return WsStatusHandlerOutDto(
         data=OnlineStatusDto(user_id=user_id, online=online)
     )
