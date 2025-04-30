@@ -1,11 +1,12 @@
-import typing
 from app.controllers.message.dto import ChatMessageDto
 from app.controllers.message.interfaces import IMessageController
 from .exceptions import NoSuchMessageException
 from app.models.chat import ChatMessageModel
-from datetime import datetime
 from tortoise.expressions import Q, F
 from tortoise.functions import Max
+from functools import lru_cache
+from datetime import datetime
+import typing
 
 
 class MessageController(IMessageController):
@@ -70,3 +71,8 @@ class MessageController(IMessageController):
         message.read_time = datetime.now()
         await message.save()
         return ChatMessageDto.from_tortoise(message)
+
+
+@lru_cache
+def get_message_controller() -> MessageController:
+    return MessageController()

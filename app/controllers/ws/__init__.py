@@ -1,9 +1,10 @@
-from app.controllers.message import MessageController
 from app.controllers.message.interfaces import IMessageController
 from app.controllers.ws.handler.registry import REGISTERED_HANDLERS
 from app.controllers.ws.handler.status import generate_online_status
 from app.controllers.ws.interfaces import IWebsocketController
+from app.controllers.message import get_message_controller
 from pydantic import BaseModel, ValidationError
+from functools import lru_cache
 from fastapi import WebSocket
 from typing import Any
 
@@ -65,9 +66,6 @@ class WebsocketController(IWebsocketController):
             raise ActionValidationPayloadException()
 
 
-# свэг
-__controller = WebsocketController(MessageController())
-
-
+@lru_cache
 def get_websocket_controller() -> WebsocketController:
-    return __controller
+    return WebsocketController(get_message_controller())
