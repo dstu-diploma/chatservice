@@ -1,9 +1,12 @@
 from app.controllers.message.dto import ChatMessageDto
-from app.models.chat import ChatMessageModel
+from app.controllers.user import IUserController
 from typing import Protocol
 
 
 class IMessageController(Protocol):
+    user_controller: IUserController
+
+    async def has_chat(self, from_user_id: int, to_user_id: int) -> bool: ...
     async def create(
         self, from_user_id: int, to_user_id: int, contents: str
     ) -> ChatMessageDto: ...

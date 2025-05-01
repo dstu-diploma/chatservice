@@ -1,22 +1,39 @@
+from app.controllers.user import IUserController, get_user_controller
+from app.controllers.message.interfaces import IMessageController
 from app.controllers.event_controller import Emitter, Events
 from app.controllers.message.dto import ChatMessageDto
-from app.controllers.message.interfaces import IMessageController
+from chatservice.app.controllers.user.exceptions import (
+    UserDoesNotExistException,
+)
 from .exceptions import NoSuchMessageException
 from app.models.chat import ChatMessageModel
 from tortoise.expressions import Q, F
 from tortoise.functions import Max
 from functools import lru_cache
 from datetime import datetime
+from fastapi import Depends
 import typing
 
 
 class MessageController(IMessageController):
-    def __init__(self):
-        pass
+    user_controller: IUserController
+
+    def __init__(self, user_controller: IUserController):
+        self.user_controller = user_controller
+
+    async def has_chat(self, from_user_id: int, to_user_id: int) -> bool:
+        return await ChatMessageModel.exists(
+            from_user_id=from_user_id, to_user_id=to_user_id
+        )
 
     async def create(
         self, from_user_id: int, to_user_id: int, contents: str
     ) -> ChatMessageDto:
+        if not await self.has_chat(
+            from_user_id, to_user_id
+        ) and not await self.user_controller.get_user_exists(to_user_id):
+            raise UserDoesNotExistException()
+
         message = await ChatMessageModel.create(
             from_user_id=from_user_id, to_user_id=to_user_id, contents=contents
         )
@@ -78,5 +95,7 @@ class MessageController(IMessageController):
 
 
 @lru_cache
-def get_message_controller() -> MessageController:
-    return MessageController()
+def get_message_controller(
+    user_controller: IUserController = Depends(get_user_controller),
+) -> MessageController:
+    return MessageController(user_controller)
