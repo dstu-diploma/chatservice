@@ -2,7 +2,7 @@ from app.controllers.user import IUserController, get_user_controller
 from app.controllers.message.interfaces import IMessageController
 from app.controllers.event_controller import Emitter, Events
 from app.controllers.message.dto import ChatMessageDto
-from chatservice.app.controllers.user.exceptions import (
+from app.controllers.user.exceptions import (
     UserDoesNotExistException,
 )
 from .exceptions import NoSuchMessageException
