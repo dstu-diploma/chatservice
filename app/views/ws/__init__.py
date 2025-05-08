@@ -1,14 +1,14 @@
+from app.controllers.ws.interfaces import IWebsocketController
+from app.controllers.auth import get_user_dto_from_token
+from app.controllers.ws import get_websocket_controller
+
 from fastapi import (
-    APIRouter,
-    Depends,
+    WebSocketException,
     HTTPException,
     WebSocket,
-    WebSocketException,
+    APIRouter,
+    Depends,
 )
-
-from app.controllers.ws import IWebsocketController, get_websocket_controller
-from app.controllers.auth import get_user_dto_from_token
-
 
 router = APIRouter(prefix="")
 
@@ -24,7 +24,7 @@ async def websocket_endpoint(
         user_dto = get_user_dto_from_token(token)
 
         if not ws_controller.is_connected(user_dto.user_id):
-            await ws_controller.register_connect(user_dto.user_id, socket)
+            await ws_controller.register_connect(user_dto, socket)
 
         while True:
             await socket.receive()

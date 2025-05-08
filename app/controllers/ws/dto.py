@@ -1,11 +1,5 @@
+from app.controllers.requests.dto import MessageDto, RequestDto
 from pydantic import BaseModel
-
-from app.controllers.message.dto import ChatMessageDto
-
-
-class StatusDto(BaseModel):
-    user_id: int
-    is_online: bool
 
 
 class BaseWsOutDto(BaseModel):
@@ -14,9 +8,14 @@ class BaseWsOutDto(BaseModel):
 
 class MessageWsOutDto(BaseWsOutDto):
     action: str = "message"
-    data: ChatMessageDto
+    data: MessageDto
 
 
-class StatusWsOutDto(BaseWsOutDto):
-    action: str = "status"
-    data: StatusDto
+class RequestOpenedWsOutDto(BaseWsOutDto):
+    action: str = "request_opened"
+    data: RequestDto
+
+
+class RequestClosedWsOutDto(BaseWsOutDto):
+    action: str = "request_closed"
+    data: RequestDto

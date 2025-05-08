@@ -1,13 +1,16 @@
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from app.acl.permissions import PermissionAcl, perform_check
 from app.controllers.auth.dto import AccessJWTPayloadDto
 from jose import ExpiredSignatureError, JWTError, jwt
 from pydantic import BaseModel
+from typing import Annotated
 from fastapi import Depends
 from os import environ
 
 from .exceptions import (
     InvalidTokenException,
     JWTParseErrorException,
+    RestrictedPermissionException,
     TokenExpiredException,
 )
 
@@ -49,3 +52,18 @@ async def get_user_dto(
         raise TokenExpiredException()
     except JWTError:
         raise JWTParseErrorException()
+
+
+class PermittedAction:
+    acl: PermissionAcl
+
+    def __init__(self, acl: PermissionAcl):
+        self.acl = acl
+
+    def __call__(
+        self, user_dto: Annotated[AccessJWTPayloadDto, Depends(get_user_dto)]
+    ):
+        if perform_check(self.acl, user_dto.role):
+            return user_dto
+
+        raise RestrictedPermissionException()

@@ -1,46 +1,37 @@
+from app.acl.permissions import PermissionAcl, Permissions, perform_check
+from app.controllers.requests.dto import MessageDto, RequestDto
 from app.controllers.event_controller import Emitter, Events
-from app.controllers.message.dto import ChatMessageDto
-from app.controllers.message.interfaces import IMessageController
-from app.controllers.ws.interfaces import IWebsocketController
-from app.controllers.ws.dto import MessageWsOutDto, StatusDto, StatusWsOutDto
-from app.controllers.message import get_message_controller
+from app.controllers.requests import get_request_controller
+from app.controllers.auth.dto import AccessJWTPayloadDto
+from app.acl.roles import UserRoles
 from functools import lru_cache
 from pydantic import BaseModel
 from fastapi import WebSocket
+import asyncio
+
+from app.controllers.ws.dto import (
+    MessageWsOutDto,
+    RequestClosedWsOutDto,
+    RequestOpenedWsOutDto,
+)
 
 
-def generate_online_status(user_id: int, is_online: bool):
-    return StatusWsOutDto(data=StatusDto(user_id=user_id, is_online=is_online))
-
-
-class WebsocketController(IWebsocketController):
+class WebsocketController:
     _connections: dict[int, WebSocket]
-    _message_controller: IMessageController
 
-    def __init__(self, message_controller: IMessageController):
+    def __init__(self):
         self._connections = {}
-        self._message_controller = message_controller
 
-    async def register_connect(self, user_id: int, connection: WebSocket):
-        # отправляем уведомление до регистрации коннекта для того, чтобы только что законнекченому пользователю
-        # не пришло сообщение
-        await self.broadcast_payload(
-            generate_online_status(user_id, is_online=True)
-        )
-
+    async def register_connect(
+        self, user_dto: AccessJWTPayloadDto, connection: WebSocket
+    ):
+        user_id = user_dto.user_id
         self._connections[user_id] = connection
         connection.scope["user_id"] = user_id
-
-        Emitter.emit(Events.UserOnline, user_id)
+        connection.scope["role"] = user_dto.role
 
     async def register_disconnect(self, user_id: int):
         del self._connections[user_id]
-
-        await self.broadcast_payload(
-            generate_online_status(user_id, is_online=False)
-        )
-
-        Emitter.emit(Events.UserOffline, user_id)
 
     def is_connected(self, user_id: int):
         return user_id in self._connections
@@ -51,23 +42,76 @@ class WebsocketController(IWebsocketController):
 
         await user.send_text(payload)
 
-    async def broadcast_payload(self, dto: BaseModel):
-        payload = dto.model_dump_json()
+    async def broadcast_to_privileged(
+        self, acl: PermissionAcl, dto: BaseModel, ignore_user_ids: set[int]
+    ):
+        awaitables = []
 
-        for user in self._connections.values():
-            await user.send_text(payload)
+        for user_id in self._connections:
+            if user_id in ignore_user_ids:
+                continue
+
+            user = self._connections[user_id]
+            role = user.scope.get("role", UserRoles.User)
+
+            if not perform_check(acl, role):
+                continue
+
+            awaitables.append(self.send_payload(user_id, dto))
+
+        await asyncio.gather(*awaitables)
 
 
 @lru_cache
 def get_websocket_controller() -> WebsocketController:
-    return WebsocketController(get_message_controller())
+    return WebsocketController()
 
 
 # костыль, но pyee не умеет работать с методами
 @Emitter.on(Events.Message)
-async def __on_message(message: ChatMessageDto):
-    controller = get_websocket_controller()
-    if controller.is_connected(message.to_user_id):
-        await controller.send_payload(
-            message.to_user_id, MessageWsOutDto(data=message)
-        )
+async def __on_message(message: MessageDto):
+    ws_controller = get_websocket_controller()
+    request_controller = get_request_controller()
+
+    ws_message = MessageWsOutDto(data=message)
+
+    await ws_controller.broadcast_to_privileged(
+        Permissions.GetAllRequests, ws_message, {message.user_id}
+    )
+
+    request = await request_controller.get_request(message.request_id)
+    if (
+        request.author_user_id != message.user_id
+        and ws_controller.is_connected(request.author_user_id)
+    ):
+        await ws_controller.send_payload(request.author_user_id, ws_message)
+
+
+@Emitter.on(Events.RequestOpened)
+async def __on_request_opened(request_dto: RequestDto):
+    ws_controller = get_websocket_controller()
+
+    ws_message = RequestOpenedWsOutDto(data=request_dto)
+
+    await ws_controller.broadcast_to_privileged(
+        Permissions.GetAllRequests, ws_message, {request_dto.author_user_id}
+    )
+
+
+@Emitter.on(Events.RequestClosed)
+async def __on_request_closed(request_dto: RequestDto):
+    ws_controller = get_websocket_controller()
+
+    ws_message = RequestClosedWsOutDto(data=request_dto)
+
+    await ws_controller.broadcast_to_privileged(
+        Permissions.GetAllRequests,
+        ws_message,
+        {request_dto.closed_by_user_id or 0},
+    )
+
+    if (
+        request_dto.closed_by_user_id != request_dto.author_user_id
+        and ws_controller.is_connected(request_dto.author_user_id)
+    ):
+        await ws_controller.send_payload(request_dto.author_user_id, ws_message)

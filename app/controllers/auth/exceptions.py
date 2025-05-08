@@ -20,3 +20,11 @@ class JWTParseErrorException(HTTPException):
             status_code=403,
             detail="Произошла ошибка при считывании JWT-токена!",
         )
+
+
+class RestrictedPermissionException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail=f"У Вас недостаточно прав для выполнения этого действия!",
+        )

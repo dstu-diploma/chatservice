@@ -4,8 +4,8 @@ from enum import StrEnum
 
 class Events(StrEnum):
     Message = "message"
-    UserOnline = "user_online"
-    UserOffline = "user_offline"
+    RequestOpened = "request_opened"
+    RequestClosed = "request_closed"
 
 
 Emitter = AsyncIOEventEmitter()
