@@ -7,6 +7,7 @@ class RequestDto(BaseModel):
     id: int
     author_user_id: int
     subject: str
+    create_date: datetime
     closed_by_user_id: int | None
 
     @staticmethod
@@ -15,6 +16,7 @@ class RequestDto(BaseModel):
             id=request.id,
             author_user_id=request.author_user_id,
             subject=request.subject,
+            create_date=request.create_date,
             closed_by_user_id=request.closed_by_user_id,
         )
 

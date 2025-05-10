@@ -6,6 +6,7 @@ class RequestModel(Model):
     id = fields.IntField(pk=True)
     author_user_id = fields.IntField()
     subject = fields.CharField(max_length=150)
+    create_date = fields.DatetimeField(auto_now_add=True)
     closed_by_user_id = fields.IntField(null=True)
 
     class Meta:
