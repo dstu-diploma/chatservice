@@ -1,5 +1,5 @@
 # костыль, но pyee не умеет работать с методами
-print("nigga")
+
 from app.dependencies import get_request_service, get_websocket_manager
 from app.services.requests.dto import MessageDto, RequestDto
 from app.services.event_controller import Emitter, Events

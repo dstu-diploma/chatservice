@@ -1,9 +1,9 @@
-from app.adapters.userserviceadapter import UserServiceAdapter
 from app.services.requests.interfaces import IRequestService
 from app.services.requests.service import RequestService
 from app.services.ws.interfaces import IWebsocketManager
-from app.ports.iuserserviceport import IUserServicePort
+from app.adapters.userservice import UserServiceAdapter
 from app.services.ws.service import WebsocketManager
+from app.ports.userservice import IUserServicePort
 from functools import lru_cache
 from fastapi import Depends
 import httpx
