@@ -1,3 +1,4 @@
+from app.ports.hackathonservice import IHackathonServicePort
 from app.ports.userservice import IUserServicePort
 from .dto import MessageDto, RequestDto
 from typing import Protocol
@@ -5,6 +6,7 @@ from typing import Protocol
 
 class IRequestService(Protocol):
     user_service: IUserServicePort
+    hackathon_service: IHackathonServicePort
 
     async def get_all_requests(self) -> list[RequestDto]: ...
     async def get_requests_by_user(self, user_id: int) -> list[RequestDto]: ...
@@ -17,7 +19,11 @@ class IRequestService(Protocol):
         self, request_id: int, closed_by_user_id: int
     ) -> RequestDto: ...
     async def create(
-        self, author_user_id: int, subject: str, first_message: str
+        self,
+        hackathon_id: int,
+        author_user_id: int,
+        subject: str,
+        first_message: str,
     ) -> RequestDto: ...
     async def send_message(
         self, request_id: int, user_id: int, message: str

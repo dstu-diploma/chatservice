@@ -1,3 +1,5 @@
+from app.adapters.hackathonservice import HackathonServiceAdapter
+from app.ports.hackathonservice import IHackathonServicePort
 from app.services.requests.interfaces import IRequestService
 from app.services.requests.service import RequestService
 from app.services.ws.interfaces import IWebsocketManager
@@ -22,10 +24,18 @@ def get_user_service(
 
 
 @lru_cache
+def get_hackathon_service(
+    client: httpx.AsyncClient = Depends(get_http_client),
+) -> IHackathonServicePort:
+    return HackathonServiceAdapter(client)
+
+
+@lru_cache
 def get_request_service(
     user_service: IUserServicePort = Depends(get_user_service),
+    hackathon_service: IHackathonServicePort = Depends(get_hackathon_service),
 ) -> IRequestService:
-    return RequestService(user_service)
+    return RequestService(user_service, hackathon_service)
 
 
 @lru_cache

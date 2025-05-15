@@ -13,3 +13,4 @@ class RequestSendMessageDto(BaseModel):
 
 class CreateRequestDto(RequestSendMessageDto):
     subject: Annotated[str, StringConstraints(min_length=3, max_length=150)]
+    hackathon_id: int

@@ -1,10 +1,11 @@
-from collections import defaultdict
-from app.ports.userservice import IUserServicePort
+from app.ports.hackathonservice import IHackathonServicePort
 from app.services.requests.interfaces import IRequestService
 from app.services.event_controller import Emitter, Events
 from app.models.chat import RequestModel, MessageModel
+from app.ports.userservice import IUserServicePort
 from tortoise.transactions import in_transaction
 from .dto import MessageDto, RequestDto
+from collections import defaultdict
 
 from .exceptions import (
     CantSendMessagesRequestIsClosedException,
@@ -13,8 +14,13 @@ from .exceptions import (
 
 
 class RequestService(IRequestService):
-    def __init__(self, user_service: IUserServicePort):
+    def __init__(
+        self,
+        user_service: IUserServicePort,
+        hackathon_service: IHackathonServicePort,
+    ):
         self.user_service = user_service
+        self.hackathon_service = hackathon_service
 
     def _get_request_user_ids(
         self, requests: list[RequestDto]
@@ -118,16 +124,28 @@ class RequestService(IRequestService):
         return request_dto
 
     async def create(
-        self, author_user_id: int, subject: str, first_message: str
+        self,
+        hackathon_id: int,
+        author_user_id: int,
+        subject: str,
+        first_message: str,
     ) -> RequestDto:
+        hackathon_info = await self.hackathon_service.get_hackathon_data(
+            hackathon_id
+        )
+
         async with in_transaction():
             request = await RequestModel.create(
-                author_user_id=author_user_id, subject=subject
+                author_user_id=author_user_id,
+                subject=subject,
+                hackathon_id=hackathon_id,
             )
 
             await self.send_message(request.id, author_user_id, first_message)
 
         request_dto = RequestDto.from_tortoise(request)
+        request_dto.hackathon_name = hackathon_info.name
+
         user_info = await self.user_service.try_get_user_info(author_user_id)
         if user_info:
             request_dto.author_name = self.user_service.format_name(user_info)

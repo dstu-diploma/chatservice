@@ -11,6 +11,9 @@ class RequestServiceSettings(BaseSettings):
     USER_SERVICE_URL: str
     USER_SERVICE_API_KEY: str
 
+    HACKATHON_SERVICE_URL: str
+    HACKATHON_SERVICE_API_KEY: str
+
     JWT_SECRET: str = "dstu"
     ROOT_PATH: str = "/"
 

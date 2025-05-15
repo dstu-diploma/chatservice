@@ -11,6 +11,8 @@ class RequestDto(BaseModel):
     create_date: datetime
     closed_by_user_id: int | None
     closed_by_name: str | None = None
+    hackathon_id: int
+    hackathon_name: str | None = None
 
     @staticmethod
     def from_tortoise(request: RequestModel):
@@ -20,6 +22,7 @@ class RequestDto(BaseModel):
             subject=request.subject,
             create_date=request.create_date,
             closed_by_user_id=request.closed_by_user_id,
+            hackathon_id=request.hackathon_id,
         )
 
 

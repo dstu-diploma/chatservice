@@ -81,7 +81,9 @@ async def create_request(
     """
     Регистрирует новое обращение.
     """
-    request = await service.create(user_dto.user_id, dto.subject, dto.message)
+    request = await service.create(
+        dto.hackathon_id, user_dto.user_id, dto.subject, dto.message
+    )
     messages = await service.get_request_history(request.id)
 
     return RequestWithMessagesDto(messages=messages, **request.model_dump())

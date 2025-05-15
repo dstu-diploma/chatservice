@@ -7,13 +7,7 @@ class IUserServicePort(Protocol):
     base_url: str
 
     async def get_user_info(self, user_id: int) -> MinimalUserDto: ...
-    async def try_get_user_info(
-        self, user_id: int
-    ) -> MinimalUserDto | None: ...
     async def get_user_info_many(
-        self, user_ids: frozenset[int]
-    ) -> list[MinimalUserDto]: ...
-    async def try_get_user_info_many(
         self, user_ids: frozenset[int]
     ) -> list[MinimalUserDto]: ...
 
@@ -30,3 +24,17 @@ class IUserServicePort(Protocol):
             name_map[user.id] = full_name
 
         return name_map
+
+    async def try_get_user_info(self, user_id: int) -> MinimalUserDto | None:
+        try:
+            return await self.get_user_info(user_id)
+        except Exception:
+            return None
+
+    async def try_get_user_info_many(
+        self, user_ids: frozenset[int]
+    ) -> list[MinimalUserDto]:
+        try:
+            return await self.try_get_user_info_many(user_ids)
+        except Exception:
+            return []

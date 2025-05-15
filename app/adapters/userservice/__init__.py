@@ -6,7 +6,6 @@ from app.config import Settings
 from typing import Any
 import urllib.parse
 import httpx
-import json
 
 
 class UserServiceAdapter(IUserServicePort):
@@ -64,17 +63,3 @@ class UserServiceAdapter(IUserServicePort):
             tuple(user_ids),
         )
         return [MinimalUserDto(**user) for user in data]
-
-    async def try_get_user_info_many(
-        self, user_ids: frozenset[int]
-    ) -> list[MinimalUserDto]:
-        try:
-            return await self.get_user_info_many(user_ids)
-        except HTTPException as e:
-            return []
-
-    async def try_get_user_info(self, user_id: int) -> MinimalUserDto | None:
-        try:
-            return await self.get_user_info(user_id)
-        except HTTPException as e:
-            return None
