@@ -22,8 +22,10 @@ def get_user_service(
 
 
 @lru_cache
-def get_request_service() -> IRequestService:
-    return RequestService()
+def get_request_service(
+    user_service: IUserServicePort = Depends(get_user_service),
+) -> IRequestService:
+    return RequestService(user_service)
 
 
 @lru_cache

@@ -6,9 +6,11 @@ from pydantic import BaseModel
 class RequestDto(BaseModel):
     id: int
     author_user_id: int
+    author_name: str | None = None
     subject: str
     create_date: datetime
     closed_by_user_id: int | None
+    closed_by_name: str | None = None
 
     @staticmethod
     def from_tortoise(request: RequestModel):
@@ -24,6 +26,7 @@ class RequestDto(BaseModel):
 class MessageDto(BaseModel):
     id: int
     user_id: int
+    user_name: str | None = None
     message: str
     request_id: int
     send_date: datetime

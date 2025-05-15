@@ -1,8 +1,11 @@
+from app.ports.userservice import IUserServicePort
 from .dto import MessageDto, RequestDto
 from typing import Protocol
 
 
 class IRequestService(Protocol):
+    user_service: IUserServicePort
+
     async def get_all_requests(self) -> list[RequestDto]: ...
     async def get_requests_by_user(self, user_id: int) -> list[RequestDto]: ...
     async def get_request(self, request_id: int) -> RequestDto: ...

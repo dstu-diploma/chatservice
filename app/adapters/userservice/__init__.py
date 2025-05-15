@@ -1,13 +1,12 @@
-from os import environ
-from typing import Any, Sequence
-import urllib.parse
-from fastapi import HTTPException
-import httpx
-
-from app.config import Settings
-from app.ports.userservice import IUserServicePort
-from app.ports.userservice.dto import MinimalUserDto
 from app.ports.userservice.exceptions import UserServiceError
+from app.ports.userservice.dto import MinimalUserDto
+from app.ports.userservice import IUserServicePort
+from fastapi import HTTPException
+from app.config import Settings
+from typing import Any
+import urllib.parse
+import httpx
+import json
 
 
 class UserServiceAdapter(IUserServicePort):
@@ -34,12 +33,12 @@ class UserServiceAdapter(IUserServicePort):
         except httpx.HTTPError as e:
             raise UserServiceError()
 
-    async def _do_post(
-        self, url: str, body: httpx._types.RequestData | None = None
-    ) -> dict:
+    async def _do_post(self, url: str, json: Any) -> Any:
         try:
             response = await self.client.post(
-                url, headers=self.headers, data=body
+                url,
+                headers=self.headers,
+                json=json,
             )
             data = response.json()
             if response.status_code == 200:
@@ -56,6 +55,23 @@ class UserServiceAdapter(IUserServicePort):
             urllib.parse.urljoin(self.base_url, str(user_id))
         )
         return MinimalUserDto(**data)
+
+    async def get_user_info_many(
+        self, user_ids: frozenset[int]
+    ) -> list[MinimalUserDto]:
+        data: list[dict[str, Any]] = await self._do_post(
+            urllib.parse.urljoin(self.base_url, "info-many"),
+            tuple(user_ids),
+        )
+        return [MinimalUserDto(**user) for user in data]
+
+    async def try_get_user_info_many(
+        self, user_ids: frozenset[int]
+    ) -> list[MinimalUserDto]:
+        try:
+            return await self.get_user_info_many(user_ids)
+        except HTTPException as e:
+            return []
 
     async def try_get_user_info(self, user_id: int) -> MinimalUserDto | None:
         try:
