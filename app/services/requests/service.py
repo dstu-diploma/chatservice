@@ -1,5 +1,5 @@
-from app.controllers.requests.interfaces import IRequestController
-from app.controllers.event_controller import Emitter, Events
+from app.services.requests.interfaces import IRequestService
+from app.services.event_controller import Emitter, Events
 from app.models.chat import RequestModel, MessageModel
 from tortoise.transactions import in_transaction
 from .dto import MessageDto, RequestDto
@@ -11,7 +11,7 @@ from .exceptions import (
 )
 
 
-class RequestController(IRequestController):
+class RequestService(IRequestService):
     async def get_all_requests(self) -> list[RequestDto]:
         requests = await RequestModel.all()
         return [RequestDto.from_tortoise(request) for request in requests]
@@ -81,8 +81,3 @@ class RequestController(IRequestController):
         Emitter.emit(Events.Message, message_dto)
 
         return message_dto
-
-
-@lru_cache
-def get_request_controller() -> RequestController:
-    return RequestController()

@@ -1,4 +1,4 @@
-from app.controllers.requests.dto import MessageDto, RequestDto
+from app.services.requests.dto import MessageDto, RequestDto
 from pydantic import BaseModel
 
 

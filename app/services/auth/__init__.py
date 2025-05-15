@@ -1,6 +1,6 @@
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.acl.permissions import PermissionAcl, perform_check
-from app.controllers.auth.dto import AccessJWTPayloadDto
+from app.services.auth.dto import AccessJWTPayloadDto
 from jose import ExpiredSignatureError, JWTError, jwt
 from pydantic import BaseModel
 from typing import Annotated

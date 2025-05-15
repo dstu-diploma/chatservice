@@ -1,6 +1,6 @@
 from typing import Annotated
 from pydantic import BaseModel, StringConstraints
-from app.controllers.requests.dto import MessageDto, RequestDto
+from app.services.requests.dto import MessageDto, RequestDto
 
 
 class RequestWithMessagesDto(RequestDto):

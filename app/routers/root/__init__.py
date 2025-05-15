@@ -1,20 +1,20 @@
+from app.services.auth.exceptions import RestrictedPermissionException
+from app.services.requests.interfaces import IRequestService
+from app.services.requests.dto import MessageDto, RequestDto
+from app.services.auth import PermittedAction, get_user_dto
 from app.acl.permissions import Permissions, perform_check
-from app.controllers.auth.dto import AccessJWTPayloadDto
-from app.controllers.auth import PermittedAction, get_user_dto
+from app.services.auth.dto import AccessJWTPayloadDto
+from app.dependencies import get_request_service
 from fastapi import APIRouter, Depends
 
-from app.controllers.auth.exceptions import RestrictedPermissionException
-from app.controllers.requests.interfaces import IRequestController
-from app.controllers.requests import get_request_controller
-from app.controllers.requests.dto import MessageDto, RequestDto
-from app.views.root.dto import (
-    CreateRequestDto,
-    RequestSendMessageDto,
+from app.routers.root.dto import (
     RequestWithMessagesDto,
+    RequestSendMessageDto,
+    CreateRequestDto,
 )
-from app.views.root.exceptions import (
-    NotYourRequestException,
+from app.routers.root.exceptions import (
     RequestAlreadyClosedException,
+    NotYourRequestException,
 )
 
 
@@ -24,7 +24,7 @@ router = APIRouter(tags=["Основное"], prefix="")
 @router.get("/", response_model=list[RequestDto], summary="Список обращений")
 async def get_requests(
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: IRequestController = Depends(get_request_controller),
+    service: IRequestService = Depends(get_request_service),
 ):
     """
     Возвращает список всех обращений текущего пользователя.
@@ -32,9 +32,9 @@ async def get_requests(
     возвращает список всех обращений.
     """
     if perform_check(Permissions.GetAllRequests, user_dto.role):
-        return await controller.get_all_requests()
+        return await service.get_all_requests()
     elif perform_check(Permissions.GetSelfRequests, user_dto.role):
-        return await controller.get_requests_by_user(user_dto.user_id)
+        return await service.get_requests_by_user(user_dto.user_id)
 
     raise RestrictedPermissionException()
 
@@ -47,7 +47,7 @@ async def get_requests(
 async def get_request_by_id(
     request_id: int,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: IRequestController = Depends(get_request_controller),
+    service: IRequestService = Depends(get_request_service),
 ):
     """
     Возвращает полную информацию об обращении, включая список сообщений.
@@ -59,11 +59,11 @@ async def get_request_by_id(
     if not can_view_own and not can_view_all:
         raise RestrictedPermissionException()
 
-    request = await controller.get_request(request_id)
+    request = await service.get_request(request_id)
     if request.author_user_id != user_dto.user_id and not can_view_all:
         raise NotYourRequestException()
 
-    messages = await controller.get_request_history(request_id)
+    messages = await service.get_request_history(request_id)
 
     return RequestWithMessagesDto(messages=messages, **request.model_dump())
 
@@ -76,15 +76,13 @@ async def create_request(
     user_dto: AccessJWTPayloadDto = Depends(
         PermittedAction(Permissions.CreateRequest)
     ),
-    controller: IRequestController = Depends(get_request_controller),
+    service: IRequestService = Depends(get_request_service),
 ):
     """
     Регистрирует новое обращение.
     """
-    request = await controller.create(
-        user_dto.user_id, dto.subject, dto.message
-    )
-    messages = await controller.get_request_history(request.id)
+    request = await service.create(user_dto.user_id, dto.subject, dto.message)
+    messages = await service.get_request_history(request.id)
 
     return RequestWithMessagesDto(messages=messages, **request.model_dump())
 
@@ -98,7 +96,7 @@ async def send_message(
     request_id: int,
     dto: RequestSendMessageDto,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: IRequestController = Depends(get_request_controller),
+    service: IRequestService = Depends(get_request_service),
 ):
     """
     Отправляет сообщение в обращение.
@@ -112,13 +110,11 @@ async def send_message(
     if not can_post_own and not can_post_all:
         raise RestrictedPermissionException()
 
-    request = await controller.get_request(request_id)
+    request = await service.get_request(request_id)
     if request.author_user_id != user_dto.user_id and not can_post_all:
         raise NotYourRequestException()
 
-    return await controller.send_message(
-        request_id, user_dto.user_id, dto.message
-    )
+    return await service.send_message(request_id, user_dto.user_id, dto.message)
 
 
 @router.delete(
@@ -127,7 +123,7 @@ async def send_message(
 async def close_request(
     request_id: int,
     user_dto: AccessJWTPayloadDto = Depends(get_user_dto),
-    controller: IRequestController = Depends(get_request_controller),
+    service: IRequestService = Depends(get_request_service),
 ):
     """
     Помечает обращение как закрытое. В сущности сохраняется ID пользователя, закрывшего обращение.
@@ -141,11 +137,11 @@ async def close_request(
     if not can_close_own and not can_close_all:
         raise RestrictedPermissionException()
 
-    request = await controller.get_request(request_id)
-    if not await controller.is_request_open(request_id):
+    request = await service.get_request(request_id)
+    if not await service.is_request_open(request_id):
         raise RequestAlreadyClosedException()
 
     if request.author_user_id != user_dto.user_id and not can_close_all:
         raise NotYourRequestException()
 
-    return await controller.close_request(request_id, user_dto.user_id)
+    return await service.close_request(request_id, user_dto.user_id)

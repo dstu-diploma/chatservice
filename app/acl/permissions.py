@@ -16,7 +16,9 @@ PermissionAcl = UserRoles | Group | PublicAccess
 
 
 class Permissions:
-    __PRIVILEGED = Group(UserRoles.Organizer, UserRoles.Helper, UserRoles.Admin)
+    __PRIVILEGED = (
+        PublicAccess()
+    )  # Group(UserRoles.Organizer, UserRoles.Helper, UserRoles.Admin)
 
     GetSelfRequests = UserRoles.User
     CreateRequest = UserRoles.User

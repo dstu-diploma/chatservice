@@ -1,6 +1,6 @@
-from app.controllers.auth import get_user_dto_from_token
-from app.views.ws.dto import WsMessageDto
-from app.views.ws.exception import (
+from app.services.auth import get_user_dto_from_token
+from app.routers.ws.dto import WsMessageDto
+from app.routers.ws.exception import (
     NoActionProvidenException,
     NoAuthTokenProvidenException,
 )
