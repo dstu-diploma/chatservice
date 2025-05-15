@@ -31,6 +31,9 @@ class IUserServicePort(Protocol):
         except Exception:
             return None
 
+    async def get_user_exists(self, user_id: int) -> bool:
+        return await self.try_get_user_info(user_id) is not None
+
     async def try_get_user_info_many(
         self, user_ids: frozenset[int]
     ) -> list[MinimalUserDto]:

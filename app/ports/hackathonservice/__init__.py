@@ -16,3 +16,6 @@ class IHackathonServicePort(Protocol):
             return await self.get_hackathon_data(hackathon_id)
         except Exception as e:
             return None
+
+    async def get_hackathon_exists(self, hackathon_id: int) -> bool:
+        return await self.try_get_hackathon_data(hackathon_id) is not None
