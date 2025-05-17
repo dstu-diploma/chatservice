@@ -2,6 +2,8 @@ from app.ports.userservice.dto import MinimalUserDto
 from collections import defaultdict
 from typing import Protocol
 
+from app.ports.userservice.exceptions import UserServiceError
+
 
 class IUserServicePort(Protocol):
     base_url: str
@@ -32,12 +34,15 @@ class IUserServicePort(Protocol):
             return None
 
     async def get_user_exists(self, user_id: int) -> bool:
-        return await self.try_get_user_info(user_id) is not None
+        try:
+            return await self.get_user_info(user_id) is not None
+        except UserServiceError:
+            raise
 
     async def try_get_user_info_many(
         self, user_ids: frozenset[int]
     ) -> list[MinimalUserDto]:
         try:
-            return await self.try_get_user_info_many(user_ids)
+            return await self.get_user_info_many(user_ids)
         except Exception:
             return []
