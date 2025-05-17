@@ -1,3 +1,4 @@
+from typing import Any
 from app.ports.hackathonservice.exceptions import HackathonServiceError
 from app.ports.hackathonservice import IHackathonServicePort
 from app.ports.hackathonservice.dto import HackathonDto
@@ -31,6 +32,23 @@ class HackathonServiceAdapter(IHackathonServicePort):
         except httpx.HTTPError as e:
             raise HackathonServiceError()
 
+    async def _do_post(self, url: str, json: Any) -> Any:
+        try:
+            response = await self.client.post(
+                url,
+                headers=self.headers,
+                json=json,
+            )
+            data = response.json()
+            if response.status_code == 200:
+                return data
+            else:
+                raise HTTPException(
+                    status_code=response.status_code, detail=data["detail"]
+                )
+        except httpx.HTTPError as e:
+            raise HackathonServiceError()
+
     async def get_hackathon_data(self, hackathon_id: int) -> HackathonDto:
         data = await self._do_get(
             urllib.parse.urljoin(self.base_url, str(hackathon_id))
@@ -52,3 +70,12 @@ class HackathonServiceAdapter(IHackathonServicePort):
             )
         )
         return data["can_upload"]
+
+    async def get_hackathon_data_many(
+        self, hackathon_ids: frozenset[int]
+    ) -> list[HackathonDto]:
+        data: list[dict[str, Any]] = await self._do_post(
+            urllib.parse.urljoin(self.base_url, "info-many"),
+            tuple(hackathon_ids),
+        )
+        return [HackathonDto(**hackathon) for hackathon in data]
