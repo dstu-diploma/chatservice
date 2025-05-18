@@ -1,9 +1,9 @@
 from app.ports.hackathonservice import IHackathonServicePort
 from app.services.requests.interfaces import IRequestService
-from app.services.event_controller import Emitter, Events
 from app.models.chat import RequestModel, MessageModel
 from app.ports.userservice import IUserServicePort
 from tortoise.transactions import in_transaction
+from app.events.emitter import Emitter, Events
 from .dto import MessageDto, RequestDto
 from app.util import dto_utils
 
