@@ -1,9 +1,9 @@
 from app.ports.hackathonservice import IHackathonServicePort
 from app.services.requests.interfaces import IRequestService
-from app.services.event_controller import Emitter, Events
 from app.models.chat import RequestModel, MessageModel
 from app.ports.userservice import IUserServicePort
 from tortoise.transactions import in_transaction
+from app.events.emitter import Emitter, Events
 from .dto import MessageDto, RequestDto
 from app.util import dto_utils
 
@@ -65,6 +65,12 @@ class RequestService(IRequestService):
                 for request in await RequestModel.filter(author_user_id=user_id)
             ]
         )
+
+    async def delete_by_user(self, user_id: int) -> None:
+        await RequestModel.filter(author_user_id=user_id).delete()
+
+    async def delete_by_hackathon(self, hackathon_id: int) -> None:
+        await RequestModel.filter(hackathon_id=hackathon_id).delete()
 
     async def _get_request(self, request_id: int) -> RequestModel:
         request = await RequestModel.get_or_none(id=request_id)
