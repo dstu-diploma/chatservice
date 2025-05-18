@@ -1,4 +1,6 @@
 aerich==0.8.2
+aio-pika==9.5.5
+aiormq==6.8.1
 aiosqlite==0.21.0
 annotated-types==0.7.0
 anyio==4.9.0
@@ -19,6 +21,9 @@ httpcore==1.0.8
 httpx==0.28.1
 idna==3.10
 iso8601==2.1.0
+multidict==6.4.3
+pamqp==3.3.0
+propcache==0.3.1
 pyasn1==0.4.8
 pycparser==2.22
 pydantic==2.11.3
@@ -41,3 +46,4 @@ typing-inspection==0.4.0
 typing_extensions==4.13.2
 uvicorn==0.34.0
 websockets==15.0.1
+yarl==1.20.0

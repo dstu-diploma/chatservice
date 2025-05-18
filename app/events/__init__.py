@@ -2,14 +2,26 @@
 
 from app.dependencies import get_request_service, get_websocket_manager
 from app.services.requests.dto import MessageDto, RequestDto
+from app.ports.event_consumer import IEventConsumerPort
 from app.events.emitter import Emitter, Events
 from app.acl.permissions import Permissions
+from asyncio import Task
 
 from app.services.ws.dto import (
     RequestClosedWsOutDto,
     RequestOpenedWsOutDto,
     MessageWsOutDto,
 )
+
+
+async def __event_callback(payload: dict):
+    Emitter.emit(payload["event_name"], payload)
+
+
+async def register_events(consumer: IEventConsumerPort) -> Task:
+    return await consumer.create_consuming_loop(
+        [e.value for e in Events], __event_callback
+    )
 
 
 @Emitter.on(Events.Message)
