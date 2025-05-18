@@ -1,9 +1,9 @@
 # костыль, но pyee не умеет работать с методами
 
 from app.dependencies import get_request_service, get_websocket_manager
+from app.events.emitter import Emitter, Events, ExternalEvents
 from app.services.requests.dto import MessageDto, RequestDto
 from app.ports.event_consumer import IEventConsumerPort
-from app.events.emitter import Emitter, Events
 from app.acl.permissions import Permissions
 from asyncio import Task
 
@@ -20,7 +20,7 @@ async def __event_callback(payload: dict):
 
 async def register_events(consumer: IEventConsumerPort) -> Task:
     return await consumer.create_consuming_loop(
-        [e.value for e in Events], __event_callback
+        [e.value for e in ExternalEvents], __event_callback
     )
 
 
@@ -67,3 +67,17 @@ async def on_request_closed(request_dto: RequestDto):
         and ws_manager.is_connected(request_dto.author_user_id)
     ):
         await ws_manager.send_payload(request_dto.author_user_id, ws_message)
+
+
+@Emitter.on(ExternalEvents.HackathonDeleted)
+async def on_hackathon_deleted(payload: dict):
+    hackathon_id = payload["data"]["id"]
+    request_service = get_request_service()
+    await request_service.delete_by_hackathon(hackathon_id)
+
+
+@Emitter.on(ExternalEvents.UserDeleted)
+async def on_user_deleted(payload: dict):
+    user_id = payload["data"]["id"]
+    request_service = get_request_service()
+    await request_service.delete_by_user(user_id)

@@ -66,6 +66,12 @@ class RequestService(IRequestService):
             ]
         )
 
+    async def delete_by_user(self, user_id: int) -> None:
+        await RequestModel.filter(author_user_id=user_id).delete()
+
+    async def delete_by_hackathon(self, hackathon_id: int) -> None:
+        await RequestModel.filter(hackathon_id=hackathon_id).delete()
+
     async def _get_request(self, request_id: int) -> RequestModel:
         request = await RequestModel.get_or_none(id=request_id)
         if request is None:
