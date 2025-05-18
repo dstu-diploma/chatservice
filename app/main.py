@@ -3,6 +3,7 @@ from app.dependencies import get_event_consumer
 from contextlib import asynccontextmanager
 from app.events import register_events
 from app.routers import main_router
+import app.events.registered as _
 from .config import Settings
 from fastapi import FastAPI
 from app.db import init_db
