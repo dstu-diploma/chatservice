@@ -21,7 +21,7 @@ async def get_http_client():
 @lru_cache
 def get_event_consumer() -> IEventConsumerPort:
     return AioPikaEventConsumerAdapter(
-        Settings.RABBITMQ_URL, "events", queue_name="hackathonservice"
+        Settings.RABBITMQ_URL, "events", queue_name="chatservice"
     )
 
 
