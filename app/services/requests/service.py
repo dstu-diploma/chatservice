@@ -23,13 +23,13 @@ class RequestService(IRequestService):
         self.hackathon_service = hackathon_service
 
     async def _inject_names(self, dtos: list[RequestDto]) -> list[RequestDto]:
-        user_names = self.user_service.get_name_map(
-            await self.user_service.try_get_user_info_many(
-                dto_utils.export_int_fields(
-                    dtos, "author_user_id", "closed_by_user_id"
-                )
+        external_user_info = await self.user_service.try_get_user_info_many(
+            dto_utils.export_int_fields(
+                dtos, "author_user_id", "closed_by_user_id"
             )
         )
+
+        user_names = self.user_service.get_name_map(external_user_info)
 
         hackathon_names = self.hackathon_service.get_name_map(
             await self.hackathon_service.try_get_hackathon_data_many(
@@ -47,6 +47,15 @@ class RequestService(IRequestService):
             "hackathon_name",
             strict=True,
         )
+
+        user_map = dict((user.id, user) for user in external_user_info)
+
+        for dto in dtos:
+            if dto.author_user_id in user_map:
+                dto.author_uploads = user_map[dto.author_user_id].uploads
+
+            if dto.closed_by_user_id in user_map:
+                dto.closed_by_uploads = user_map[dto.closed_by_user_id].uploads
 
         return dtos
 
@@ -93,11 +102,16 @@ class RequestService(IRequestService):
             for message in await MessageModel.filter(request_id=request_id)
         ]
 
-        user_names = self.user_service.get_name_map(
-            await self.user_service.try_get_user_info_many(
-                dto_utils.export_int_fields(dtos, "user_id")
-            )
+        external_user_info = await self.user_service.try_get_user_info_many(
+            dto_utils.export_int_fields(dtos, "user_id")
         )
+
+        user_names = self.user_service.get_name_map(external_user_info)
+        user_map = dict((user.id, user) for user in external_user_info)
+
+        for dto in dtos:
+            if dto.user_id in user_map:
+                dto.user_uploads = user_map[dto.user_id].uploads
 
         return dto_utils.inject_mapping(
             dtos, user_names, "user_id", "user_name", strict=True

@@ -1,4 +1,5 @@
 from app.models.chat import MessageModel, RequestModel
+from app.ports.userservice.dto import UserUploadDto
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -7,10 +8,12 @@ class RequestDto(BaseModel):
     id: int
     author_user_id: int
     author_name: str | None = None
+    author_uploads: list[UserUploadDto] | None = None
     subject: str
     create_date: datetime
     closed_by_user_id: int | None
     closed_by_name: str | None = None
+    closed_by_uploads: list[UserUploadDto] | None = None
     hackathon_id: int
     hackathon_name: str | None = None
 
@@ -30,6 +33,7 @@ class MessageDto(BaseModel):
     id: int
     user_id: int
     user_name: str | None = None
+    user_uploads: list[UserUploadDto] | None = None
     message: str
     request_id: int
     send_date: datetime
