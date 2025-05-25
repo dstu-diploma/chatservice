@@ -1,5 +1,6 @@
 from app.ports.hackathonservice import IHackathonServicePort
 from app.services.requests.interfaces import IRequestService
+from app.acl.permissions import Permissions, perform_check
 from app.models.chat import RequestModel, MessageModel
 from app.ports.userservice import IUserServicePort
 from tortoise.transactions import in_transaction
@@ -9,6 +10,7 @@ from app.util import dto_utils
 
 from .exceptions import (
     CantSendMessagesRequestIsClosedException,
+    NoAccessToRequestException,
     NoSuchRequestException,
 )
 
@@ -126,9 +128,17 @@ class RequestService(IRequestService):
     ) -> RequestDto:
         request = await self._get_request(request_id)
 
-        if request.closed_by_user_id is None:
-            request.closed_by_user_id = closed_by_user_id
-            await request.save()
+        if request.closed_by_user_id is not None:
+            return RequestDto.from_tortoise(request)
+
+        user_info = await self.user_service.get_user_info(closed_by_user_id)
+        if request.author_user_id != closed_by_user_id and not perform_check(
+            Permissions.CloseRequestAsSupport, user_info.role
+        ):
+            raise NoAccessToRequestException()
+
+        request.closed_by_user_id = closed_by_user_id
+        await request.save()
 
         request_dto = RequestDto.from_tortoise(request)
         Emitter.emit(Events.RequestClosed, request_dto)
@@ -169,6 +179,13 @@ class RequestService(IRequestService):
     ) -> MessageDto:
         if not await self.is_request_open(request_id):
             raise CantSendMessagesRequestIsClosedException()
+
+        request = await self._get_request(request_id)
+        user_info = await self.user_service.get_user_info(user_id)
+        if request.author_user_id != user_id and not perform_check(
+            Permissions.CreateMessageAsSupport, user_info.role
+        ):
+            raise NoAccessToRequestException()
 
         message_obj = await MessageModel.create(
             user_id=user_id, message=message, request_id=request_id
