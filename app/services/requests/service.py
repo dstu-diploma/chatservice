@@ -192,9 +192,7 @@ class RequestService(IRequestService):
         )
 
         message_dto = MessageDto.from_tortoise(message_obj)
-        user_info = await self.user_service.try_get_user_info(user_id)
-        if user_info:
-            message_dto.user_name = user_info.formatted_name
+        message_dto.user_name = user_info.formatted_name
 
         Emitter.emit(Events.Message, message_dto)
         return message_dto
